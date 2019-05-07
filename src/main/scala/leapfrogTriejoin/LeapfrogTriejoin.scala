@@ -32,6 +32,7 @@ class LeapfrogTriejoin(trieIterators: Map[EdgeRelationship, TrieIterator], varia
       trieIterators.filter( { case (r, _) => r.variables.contains(v)}).values.toArray
     ).toArray
 
+  var maxDepth = allVariables.size - 1
   var depth = -1
   var bindings = Array.fill(allVariables.size)(-1)
   var atEnd = trieIterators.values.exists(i => i.atEnd)  // Assumes connected join?
@@ -39,6 +40,9 @@ class LeapfrogTriejoin(trieIterators: Map[EdgeRelationship, TrieIterator], varia
   if (!atEnd) {
     moveToNextTuple()
   }
+
+  val lastIterator = variable2TrieIterators(maxDepth - 1).intersect(variable2TrieIterators(maxDepth)).head
+  var lastUp = -1
 
   def next(): Array[Int] = {
     if (atEnd) {
@@ -129,12 +133,16 @@ class LeapfrogTriejoin(trieIterators: Map[EdgeRelationship, TrieIterator], varia
     contains
   }
 
-  private def triejoinOpen() ={
+  private def triejoinOpen() = {
     depth += 1
 
     whileForeach(variable2TrieIterators(depth), _.open())
 
-    leapfrogJoins(depth).init()
+    if (depth == maxDepth && lastUp >= depth - 1) {
+      leapfrogJoins(depth).init(lastIterator)
+    } else {
+      leapfrogJoins(depth).init()
+    }
   }
 
   private def triejoinUp() = {
@@ -142,6 +150,8 @@ class LeapfrogTriejoin(trieIterators: Map[EdgeRelationship, TrieIterator], varia
 
     bindings(depth) = -1
     depth -= 1
+
+    lastUp = depth
   }
 
 

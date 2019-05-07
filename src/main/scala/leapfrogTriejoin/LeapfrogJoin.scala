@@ -1,6 +1,6 @@
 package leapfrogTriejoin
 
-class LeapfrogJoin(var iterators: Array[LinearIterator] ) {
+class LeapfrogJoin(var iterators: Array[LinearIterator]) {
   if (iterators.isEmpty) {
     throw new IllegalArgumentException("iterators cannot be empty")
   }
@@ -9,14 +9,18 @@ class LeapfrogJoin(var iterators: Array[LinearIterator] ) {
   var p = 0
   var key = 0
 
-  def init(): Unit = {
+  def init(onlySort: TrieIterator = null): Unit = {
     iteratorAtEndExists()
 
     p = 0
     key = 0
 
     if (!atEnd) {
-      sortIterators()
+      if (onlySort != null) {
+        reinsert(onlySort)
+      } else {
+        sortIterators()
+      }
       leapfrogSearch()
     }
   }
@@ -31,6 +35,30 @@ class LeapfrogJoin(var iterators: Array[LinearIterator] ) {
       }
       i += 1
     }
+  }
+
+  @inline
+  private def reinsert(iterator: TrieIterator): Unit = {
+    var i = 0
+    while (i < iterators.size) {
+      val iteratorToSort = iterators(i)
+      if (iteratorToSort eq iterator) {
+        val keyToSort = iterators(i).key
+        var j = i
+        while (j > 0 && iterators(j - 1).key > keyToSort) {
+          iterators(j) = iterators(j - 1)
+          j -= 1
+        }
+        while (j < iterators.length - 1 && iterators(j + 1).key < keyToSort) {
+          iterators(j) = iterators(j + 1)
+          j += 1
+        }
+        iterators(j) = iteratorToSort
+      }
+      i += 1
+    }
+//        println(s"${iterator.hashCode()} ${iterators.map(i => (i.hashCode(), i.key)).mkString(", ")}")
+
   }
 
   // Public for testing
@@ -54,7 +82,11 @@ class LeapfrogJoin(var iterators: Array[LinearIterator] ) {
   }
 
   private def leapfrogSearch(): Unit = {
-    var max = iterators(if (p > 0) { p - 1 } else {iterators.length - 1}).key
+    var max = iterators(if (p > 0) {
+      p - 1
+    } else {
+      iterators.length - 1
+    }).key
     while (true) {
       var min = iterators(p).key
       if (min == max) {
