@@ -130,7 +130,6 @@ class ArrayTrieIterable(iter: Iterator[InternalRow]) extends TrieIterable {
     override def translate(keys: Array[Long]): Array[Long] = {
       keys
     }
-
   }
 
   override def iterator: Iterator[InternalRow] = {

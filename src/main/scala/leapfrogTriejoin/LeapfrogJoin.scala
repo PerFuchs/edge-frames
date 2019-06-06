@@ -1,15 +1,17 @@
 package leapfrogTriejoin
 
-class LeapfrogJoin(var iterators: Array[LinearIterator]) {
+class LeapfrogJoin(var iterators: Array[LinearIterator]) extends LeapfrogJoinInterface {
   if (iterators.isEmpty) {
     throw new IllegalArgumentException("iterators cannot be empty")
   }
+  var counter = 0
 
   var atEnd: Boolean = false
   private[this] var p = 0
   var key = 0L
 
   def init(): Unit = {
+    counter = 0
     iteratorAtEndExists()
 
     p = 0
@@ -88,6 +90,7 @@ class LeapfrogJoin(var iterators: Array[LinearIterator]) {
 
   def leapfrogNext(): Unit = {
     iterators(p).next()
+    counter += 1
     if (iterators(p).atEnd) {
       atEnd = true
     } else {

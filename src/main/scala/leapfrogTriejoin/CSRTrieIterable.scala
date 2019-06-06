@@ -14,7 +14,7 @@ class CSRTrieIterable(private[this] val verticeIDs: Array[Long],
     new TrieIteratorImpl()
   }
 
-  class TrieIteratorImpl() extends TrieIterator {
+  class TrieIteratorImpl() extends TrieIterator with MaterializedIterator {
     private[this] var isAtEnd = verticeIDs.length == 0
 
     private[this] var depth = -1
@@ -81,6 +81,7 @@ class CSRTrieIterable(private[this] val verticeIDs: Array[Long],
         isAtEnd = srcPosition >= edgeIndices.length - 1
         isAtEnd
       } else {
+        val oldDstPosition = dstPosition
         dstPosition = ArraySearch.find(edges, key, dstPosition, edgeIndices(srcPosition + 1))
         isAtEnd = dstPosition == edgeIndices(srcPosition + 1)
         isAtEnd
@@ -109,6 +110,72 @@ class CSRTrieIterable(private[this] val verticeIDs: Array[Long],
       keys
     }
 
+    override def estimateSize: Int = {
+      if (depth == 1) {
+        edgeIndices(srcPosition + 1) - edgeIndices(srcPosition)
+      } else {
+        Int.MaxValue
+      }
+    }
+
+    override def get(pos: Int): Int = {
+      if (depth == 0) {
+        pos
+      } else {
+        edges(pos).toInt
+      }
+    }
+
+    override def idempotentSeek(key: Int): Int = {
+      assert(!atEnd)
+      if (depth == 0) {
+        var position = key.toInt
+        if (position < edgeIndices.length - 1 &&  // TODO srcPosition should never be bigger than edgeIndices.lenght -  1, investigate
+          edgeIndices(position) == edgeIndices(position + 1)) {
+          var indexToSearch = edgeIndices(position + 1) // A linear search is ideal, see log 05.06
+
+          do {
+            position += 1
+          } while (position < edgeIndices.length - 1 && edgeIndices(position + 1) == indexToSearch)  // TODO sentry element
+        }
+        position
+      } else {
+        val position = ArraySearch.find(edges, key, edgeIndices(srcPosition), edgeIndices(srcPosition + 1))
+        position
+      }
+    }
+
+    override def setPosition(pos: Int): Unit  = {
+      if (depth == 1) {
+        assert(pos >= edgeIndices(srcPosition),
+          s"Tried to set position $pos but ${edgeIndices(srcPosition)}")
+        assert(pos < edgeIndices(srcPosition + 1),
+          s"Tried to set position $pos but ${edgeIndices(srcPosition + 1)}")
+        dstPosition = pos
+      } else {
+        assert(0 <= pos)
+        assert(pos < edgeIndices.length)
+        srcPosition = pos
+      }
+    }
+
+    override def getPosition: Int = {
+      if (depth == 1) {
+        dstPosition
+      } else {
+        srcPosition
+      }
+    }
+
+
+    // TODO can do without if I add a sentinel value to idempotent
+    override def getEnd: Int = {
+      if (depth == 0) {
+        edgeIndices.length
+      } else {
+        edgeIndices(srcPosition + 1)
+      }
+    }
   }
 
   override def iterator: Iterator[InternalRow] = {
