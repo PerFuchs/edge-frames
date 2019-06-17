@@ -1,5 +1,7 @@
 package leapfrogTriejoin
 
+import experiments.InternalAnalysis
+
 import scala.collection.mutable
 
 /**
@@ -50,6 +52,8 @@ class MaterializingLeapfrogJoin(var iterators: Array[TrieIterator]) extends Leap
         fallback = new LeapfrogJoin(iterators.map(_.asInstanceOf[LinearIterator]))
       }
     }
+
+    InternalAnalysis.analyseIntersections(secondLevelIterators.map(_.clone().asInstanceOf[TrieIterator]))
 
     if (secondLevelIterators.length == 0 || !MaterializingLeapfrogJoin.shouldMaterialize) {
       fallback.init()
@@ -248,5 +252,4 @@ object MaterializingLeapfrogJoin {
     }
     shouldMaterialize = value
   }
-
 }

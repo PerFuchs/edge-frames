@@ -231,6 +231,8 @@ object ExperimentRunner extends App {
   println("Setting up Spark")
   val sp = setupSpark()
 
+  InternalAnalysis.setupAnalysis(config)
+
   val ds = loadDataset()
 
   val wcojTimes = ListBuffer[Double]()
