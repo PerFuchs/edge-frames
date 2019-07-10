@@ -118,7 +118,8 @@ class MaterializingLeapfrogJoin(var iterators: Array[TrieIterator]) extends Leap
     secondLevelIterators(smallestPosition) = temp
   }
 
-  private def materializeSingleIterator(iter: LinearIterator): Unit = {
+  // TODO I could improve by dealing with the special cases of no, one or two iterators in a specialized way
+  private def materializeSingleIterator(iter: LinearIterator): Unit = {  // TODO unnessesary work
     var i = 0
     while (!iter.atEnd) {
       materializedValues(i) = iter.key

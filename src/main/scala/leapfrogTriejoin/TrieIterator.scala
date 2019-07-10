@@ -14,4 +14,6 @@ trait TrieIterator extends LinearIterator {
     * @return
     */
   def getDepth: Int
+
+  override def clone(): AnyRef = ???
 }
