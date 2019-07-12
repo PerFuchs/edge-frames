@@ -23,7 +23,7 @@ class LeapfrogJoin(var iterators: Array[LinearIterator]) {
     }
   }
 
-  @inline
+
   private def iteratorAtEndExists(): Unit = {
     atEnd = false
     var i = 0

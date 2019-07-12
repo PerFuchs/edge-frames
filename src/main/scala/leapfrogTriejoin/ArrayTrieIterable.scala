@@ -121,7 +121,7 @@ class ArrayTrieIterable(iter: Iterator[InternalRow]) extends TrieIterable {
       isAtEnd
     }
 
-    @inline
+
     private def updateAtEnd(): Unit = {
       isAtEnd = currentPosition >= currentEnd
     }

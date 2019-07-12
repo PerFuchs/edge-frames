@@ -20,7 +20,7 @@ object ArraySearch {
     }
   }
 
-  @inline
+
   def linearSearch(vector: Array[Long], key: Long, start: Int, end: Int): Int = {
     if (key > vector(end - 1)) { // Key is not in range, the least upper bound is end
       end
@@ -34,7 +34,7 @@ object ArraySearch {
   }
 
   // TODO write more unit tests about this
-  @inline
+
   def binarySearch(vector: Array[Long], key: Long, start: Int, end: Int): Int = {
     assert(0 <= start)
     assert(start < end)

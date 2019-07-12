@@ -106,7 +106,7 @@ class LeapfrogTriejoin(trieIterators: Map[EdgeRelationship, TrieIterator], varia
     }
   }
 
-  @inline
+
   private def nextAction(): Int = {
     currentLeapfrogJoin.leapfrogNext()
     leapfrogFilteredNext()
@@ -123,7 +123,7 @@ class LeapfrogTriejoin(trieIterators: Map[EdgeRelationship, TrieIterator], varia
 
   }
 
-  @inline
+
   private def leapfrogFilteredNext(): Unit = {
     if (distinctVariables) {
       while (!currentLeapfrogJoin.atEnd && bindingsContains(currentLeapfrogJoin.key)) {
@@ -136,7 +136,7 @@ class LeapfrogTriejoin(trieIterators: Map[EdgeRelationship, TrieIterator], varia
     }
   }
 
-  @inline
+
   private def bindingsContainsBigger(key: Long): Boolean = {
     var i = 0
     var contains = false
@@ -147,7 +147,7 @@ class LeapfrogTriejoin(trieIterators: Map[EdgeRelationship, TrieIterator], varia
     contains
   }
 
-  @inline
+
   private def bindingsContains(key: Long): Boolean = {
     var i = 0
     var contains = false
@@ -158,7 +158,7 @@ class LeapfrogTriejoin(trieIterators: Map[EdgeRelationship, TrieIterator], varia
     contains
   }
 
-  @inline
+
   private def triejoinOpen(): Unit = {
     depth += 1
 
@@ -172,7 +172,7 @@ class LeapfrogTriejoin(trieIterators: Map[EdgeRelationship, TrieIterator], varia
     leapfrogJoins(depth).init()
   }
 
-  @inline
+
   private def triejoinUp(): Unit = {
     val trieIterators = variable2TrieIterators(depth)
     var i = 0
@@ -185,7 +185,7 @@ class LeapfrogTriejoin(trieIterators: Map[EdgeRelationship, TrieIterator], varia
     depth -= 1
   }
 
-  @inline
+
   private def currentLeapfrogJoin: LeapfrogJoin = {
     leapfrogJoins(depth)
   }
