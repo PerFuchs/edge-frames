@@ -14,7 +14,7 @@ scalacOptions ++= Seq(
 //  "-language:existentials",
 //  "-language:postfixOps",
   "-optimize",
-//  "-Xdisable-assertions"
+  "-Xdisable-assertions"
 )
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.5" % "test"
