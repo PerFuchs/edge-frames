@@ -221,7 +221,7 @@ object Queries {
       .map(e => s"(${e(0)}) - [] -> (${e(1)})")
       .mkString(";")
     //    println(s"Perm: ${perm.mkString(",")} at position $permCounter")
-    rel.findPattern(pattern, verticeNames, distinctFilter = useDistinctFilter, smallerThanFilter = !useDistinctFilter)
+    rel.findPattern(pattern, verticeNames, distinctFilter = false, smallerThanFilter = false)
   }
 
   def diamondPattern(rel: DataFrame): DataFrame = {
