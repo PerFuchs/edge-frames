@@ -311,7 +311,7 @@ object ExperimentRunner extends App {
       materializationTime = Utils.avg(wcojResults.map(_.materializationTime))
     }
 
-    println(s"Using $algorithm, $query took $time in average over ${config.reps} repetitions (result size $count).")
+    println(s"(Base sorting) Using $algorithm, $query took $time in average over ${config.reps} repetitions (result size $count).")
     if (results.head.algorithm == WCOJ) {
       println(s"WCOJ took $wcojTime, copying took $copyTime took $materializationTime")
     }
