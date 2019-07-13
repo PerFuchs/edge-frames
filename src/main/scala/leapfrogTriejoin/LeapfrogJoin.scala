@@ -15,17 +15,15 @@ class LeapfrogJoin(var iterators: Array[LinearIterator]) extends LeapfrogJoinInt
     iteratorAtEndExists()
 
     p = 0
-    key = -1
+    key = 0
 
     if (!atEnd) {
-//      println(iterators.map(_.estimateSize).mkString(", "))
-//      test(iterators.map(_.clone().asInstanceOf[LinearIterator]))
+      //      println(iterators.map(_.estimateSize).mkString(", "))
+      //      test(iterators.map(_.clone().asInstanceOf[LinearIterator]))
       sortIterators()
-      if (!atEnd && key == -1) {
-        leapfrogSearch()
-      }
+      leapfrogSearch()
     }
-//    println(atEnd)
+    //    println(atEnd)
   }
 
   def test(iterators: Array[LinearIterator]): Unit = {
@@ -71,29 +69,19 @@ class LeapfrogJoin(var iterators: Array[LinearIterator]) extends LeapfrogJoinInt
   // sorts the iterator such that p points to the smallest iterator and p - 1 to the largest
   // Public for testing, returns p for testing
   def sortIterators(): Int = {
-    var i = 0
-    var max = 0L
-    var maxPosition = 0
+    var i = 1
     while (i < iterators.length) {
-      val key = iterators(i).key
-      if (key > max) {
-        max = key
-        maxPosition = i
+      val iteratorToSort = iterators(i)
+      val keyToSort = iterators(i).key
+      var j = i
+      while (j > 0 && iterators(j - 1).key > keyToSort) {
+        iterators(j) = iterators(j - 1)
+        j -= 1
       }
+      iterators(j) = iteratorToSort
       i += 1
     }
-
-    p = if (maxPosition + 1 < iterators.length) maxPosition + 1 else 0
-    while (p != maxPosition && !iterators(p).seek(max)) {
-      max = iterators(p).key
-      p = if (p + 1 < iterators.length) p + 1 else 0
-    }
-
-    atEnd = iterators(p).atEnd
-    if (!atEnd && iterators(p).key == max) {
-      key = max
-    }
-    p
+    0
   }
 
   private def leapfrogSearch(): Unit = {
