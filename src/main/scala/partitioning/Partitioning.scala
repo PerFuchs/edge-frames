@@ -1,5 +1,6 @@
 package partitioning
 
+import org.slf4j.LoggerFactory
 import partitioning.shares.Hypercube
 
 import scala.collection.mutable
@@ -26,6 +27,7 @@ case class Shares(hypercube: Hypercube = Hypercube(Array[Int]())) extends Partit
 }
 
 case class SharesRange(hypercube: Option[Hypercube] = None, prefix: Option[Int] = None) extends Partitioning {
+  val logger = LoggerFactory.getLogger(classOf[SharesRange])
 
   var rangesOpt: Option[Map[(Int, Int), Seq[(Int, Int)]]] = None
 
@@ -57,7 +59,9 @@ case class SharesRange(hypercube: Option[Hypercube] = None, prefix: Option[Int] 
     rangesOpt.getOrElse(computeRanges(lower, upper))((partition, dimension))
   }
 
+  // TODO super slow
   private def computeRanges(lower: Int, upper: Int): Map[(Int, Int), Seq[(Int, Int)]] = {
+    val start = System.nanoTime()
     val rangeMap = new mutable.HashMap[(Int, Int), Seq[(Int, Int)]]()
 
     val numberOfPartitions = hypercube.get.dimensionSizes.product
@@ -128,8 +132,12 @@ case class SharesRange(hypercube: Option[Hypercube] = None, prefix: Option[Int] 
       val coordinate = hypercube.get.getCoordinate(p)
       for (d <- hypercube.get.dimensionSizes.indices) {
         rangeMap((p, d)) = combinedRanges((d, coordinate(d)))
+//        println("p", p, "d", d, combinedRanges(d, coordinate(d)).mkString(", "))
       }
     }
+
+    val end = System.nanoTime()
+    logger.warn(s"Computing the partitions took: ${(end - start) / 1e9}")
     rangesOpt = Option(rangeMap.toMap)
     rangesOpt.get
   }

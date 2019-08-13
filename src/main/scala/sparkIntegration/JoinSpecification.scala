@@ -12,7 +12,7 @@ import scala.collection.mutable
 
 class JoinSpecification(joinPattern: Seq[Pattern], val variableOrdering: Seq[String],
                         val joinAlgorithm: WCOJAlgorithm,
-                        partitioning: Partitioning,
+                        val partitioning: Partitioning,
                         val distinctFilter: Boolean,
                         smallerThanFilter: Boolean) extends Serializable {
   private val logger = LoggerFactory.getLogger(classOf[JoinSpecification])
@@ -95,7 +95,7 @@ class JoinSpecification(joinPattern: Seq[Pattern], val variableOrdering: Seq[Str
 //                  )
                 } else {
                   val trieIterable = trieIterables.head.asInstanceOf[CSRTrieIterable]
-                  val ti = trieIterable.trieIterator
+                  val ti = trieIterable.trieIterator(Some(partition), Some(partitioning), None, None)
                   val firstDimensionRanges = part.getRanges(
                     partition, variableOrdering.indexOf(src.name), trieIterable.minValue, trieIterable.maxValue)
                     .flatMap(r => Seq(r._1, r._2)).toArray

@@ -429,9 +429,16 @@ object ExperimentRunner extends App {
       System.gc()
       print(".")
       val start = System.nanoTime()
-      val count = plan.count()
+      val count = plan.cache().count()
       val end = System.nanoTime()
       val time = (end - start).toDouble / 1e9
+
+      import sp.implicits._
+      plan
+        .rdd
+        .mapPartitionsWithIndex{case (i,rows) => Iterator((i,rows.size))}
+        .toDF("partition_number","number_of_records")
+        .show
 
 
 

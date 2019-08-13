@@ -65,7 +65,8 @@ class WCOJFunctions[T](ds: Dataset[T]) {
     val partitioning = conf.getPartitioning match {
       case Shares(_) => Shares(Hypercube.getBestConfigurationFor(conf.getParallelism, getQuery(edges), variableOrdering))
       case SharesRange(None, prefix) =>
-        SharesRange(Some(Hypercube.getBestConfigurationFor(conf.getParallelism, getQuery(edges), variableOrdering, prefix)), prefix)
+        SharesRange(Some(Hypercube.getBestConfigurationFor(conf.getParallelism, getQuery(edges), variableOrdering, prefix)),
+          prefix)
       case p @ SingleVariablePartitioning(variable) => {
         p.getEquivalentSharesRangePartitioning(conf.getParallelism, getQuery(edges).vertices.size)
       }

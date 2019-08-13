@@ -49,28 +49,33 @@ class CSRTrieIterable(private[this] val verticeIDs: Array[Long],
     match {
       case Some(SharesRange(Some(hypercube), _)) => {
         val upper = edgeIndices.length - 1
-        val coordinate = hypercube.getCoordinate(partition.get)
-        val (fl, fu) = if (dimensionFirstLevel.get == 1) {
-          getPartitionBoundsInRange(0, upper, coordinate(dimensionFirstLevel.get), hypercube.dimensionSizes(dimensionFirstLevel.get),
-            true)
-        } else {
-          getPartitionBoundsInRange(0, upper, coordinate(dimensionFirstLevel.get), hypercube.dimensionSizes(dimensionFirstLevel.get),
-            false)
-        }
-        val (sl, su) = if (dimensionSecondLevel.get == 1) {
-          getPartitionBoundsInRange(0, upper, coordinate(dimensionSecondLevel.get), hypercube.dimensionSizes(dimensionSecondLevel.get),
-            true)
-        } else {
-          getPartitionBoundsInRange(0, upper, coordinate(dimensionSecondLevel.get), hypercube.dimensionSizes(dimensionSecondLevel.get),
-            false)
-        }
-        (fl, fu, sl, su)
+//        val coordinate = hypercube.getCoordinate(partition.get)
+//        val (fl, fu) = if (dimensionFirstLevel.get == 1) {
+//          getPartitionBoundsInRange(0, upper, coordinate(dimensionFirstLevel.get), hypercube.dimensionSizes(dimensionFirstLevel.get),
+//            true)
+//        } else {
+//          getPartitionBoundsInRange(0, upper, coordinate(dimensionFirstLevel.get), hypercube.dimensionSizes(dimensionFirstLevel.get),
+//            false)
+//        }
+//        val (sl, su) = if (dimensionSecondLevel.get == 1) {
+//          getPartitionBoundsInRange(0, upper, coordinate(dimensionSecondLevel.get), hypercube.dimensionSizes(dimensionSecondLevel.get),
+//            true)
+//        } else {
+//          getPartitionBoundsInRange(0, upper, coordinate(dimensionSecondLevel.get), hypercube.dimensionSizes(dimensionSecondLevel.get),
+//            false)
+//        }
+        val numRanges = hypercube.dimensionSizes.product
+        val ranges = (0 until numRanges).map(i => getPartitionBoundsInRange(0, upper, i, numRanges, fromBelow = true))
+        val outdeegree = ranges.map(r => (r, edgeIndices(r._2) - edgeIndices(r._1))).toMap
+//        println(outdeegree.mkString(", "))
+
+        (0, edgeIndices.length - 1, 0, edgeIndices.length - 1)
+//        (fl, fu, sl, su)
       }
       case _ => {
         (0, edgeIndices.length - 1, 0, edgeIndices.length - 1)
       }
     }
-
 
     private[this] var isAtEnd = verticeIDs.length == 0
 
@@ -170,25 +175,27 @@ class CSRTrieIterable(private[this] val verticeIDs: Array[Long],
 
     override def seek(key: Long): Boolean = {
       assert(!atEnd)
-      assert(keyValue < key)
-      if (depth == 0) {
-        srcPosition = key.toInt
-        if (srcPosition < edgeIndices.length - 1 && // TODO srcPosition should never be bigger than edgeIndices.lenght -  1, investigate
-          edgeIndices(srcPosition) == edgeIndices(srcPosition + 1)) { // TODO does srcPosition < edgeIndices.length - 1 ruin
-          // predicatability?
-          moveToNextSrcPosition()
+      if (keyValue < key) {
+        assert(keyValue < key)  // TODO fix this call
+        if (depth == 0) {
+          srcPosition = key.toInt
+          if (srcPosition < edgeIndices.length - 1 && // TODO srcPosition should never be bigger than edgeIndices.lenght -  1, investigate
+            edgeIndices(srcPosition) == edgeIndices(srcPosition + 1)) { // TODO does srcPosition < edgeIndices.length - 1 ruin
+            // predicatability?
+            moveToNextSrcPosition()
+          }
+          isAtEnd = firstLevelUpperBound <= srcPosition
+          keyValue = srcPosition.toLong
+          isAtEnd
+        } else {
+          dstPosition = ArraySearch.find(edges, key, dstPosition, edgeIndices(srcPosition + 1))
+          isAtEnd = dstPosition == edgeIndices(srcPosition + 1) || secondLevelUpperBound <= edges(dstPosition)
+          if (!isAtEnd) {
+            keyValue = edges(dstPosition)
+          }
         }
-        isAtEnd = firstLevelUpperBound <= srcPosition
-        keyValue = srcPosition.toLong
-        isAtEnd
-      } else {
-        dstPosition = ArraySearch.find(edges, key, dstPosition, edgeIndices(srcPosition + 1))
-        isAtEnd = dstPosition == edgeIndices(srcPosition + 1) || secondLevelUpperBound <= edges(dstPosition)
-        if (!isAtEnd) {
-          keyValue = edges(dstPosition)
-        }
-        isAtEnd
       }
+      isAtEnd
     }
 
     private def moveToNextSrcPosition(): Unit = {
