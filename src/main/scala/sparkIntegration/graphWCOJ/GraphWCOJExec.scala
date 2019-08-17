@@ -2,13 +2,14 @@ package sparkIntegration.graphWCOJ
 
 import experiments.GraphWCOJ
 import experiments.metrics.Metrics
-import leapfrogTriejoin.TrieIterable
+import leapfrogTriejoin.{CSRTrieIterable, TrieIterable}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeSet, BoundReference, UnsafeProjection}
 import org.apache.spark.sql.execution.metric.SQLMetrics
 import org.apache.spark.sql.execution.{RowIterator, SparkPlan}
 import org.slf4j.LoggerFactory
+import partitioning.SharesRange
 import sparkIntegration.wcoj.WCOJExec
 import sparkIntegration.{JoinSpecification, WCOJConfiguration, WCOJInternalRow}
 
@@ -59,7 +60,17 @@ case class GraphWCOJExec(outputVariables: Seq[Attribute],
       }
       case GraphWCOJ => {
         val partitionRDD = partitionChild.execute()
-        val csrBroadcast = graphChild.executeBroadcast[(TrieIterable, TrieIterable)]()
+        val csrBroadcast = graphChild.executeBroadcast[(CSRTrieIterable, CSRTrieIterable)]()
+
+        joinSpecification.partitioning match {
+          case p @ SharesRange(_, _) => {
+            // TODO could be called only for one in theory
+            csrBroadcast.value._1.initRanges(p)
+            csrBroadcast.value._2.initRanges(p)
+          }
+          case _ => /* NOP */
+        }
+
 
         partitionRDD.mapPartitionsWithIndex((partition, _) => {
           // TODO empty partitions?

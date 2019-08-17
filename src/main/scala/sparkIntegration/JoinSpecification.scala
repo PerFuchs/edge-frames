@@ -12,7 +12,7 @@ import scala.collection.mutable
 
 class JoinSpecification(joinPattern: Seq[Pattern], val variableOrdering: Seq[String],
                         val joinAlgorithm: WCOJAlgorithm,
-                        partitioning: Partitioning,
+                        val partitioning: Partitioning,
                         val distinctFilter: Boolean,
                         smallerThanFilter: Boolean) extends Serializable {
   private val logger = LoggerFactory.getLogger(classOf[JoinSpecification])
@@ -78,15 +78,17 @@ class JoinSpecification(joinPattern: Seq[Pattern], val variableOrdering: Seq[Str
               case part @ SharesRange(_, _) => {
                 if (dstAccessibleRelationship(i)) {
                   val trieIterable = trieIterables(1).asInstanceOf[CSRTrieIterable]
-                  val ti = trieIterable.trieIterator
-                  val firstDimensionRanges = part.getRanges(
-                    partition, variableOrdering.indexOf(dst.name), trieIterable.minValue, trieIterable.maxValue)
-                    .flatMap(r => Seq(r._1, r._2)).toArray
-                  val secondDimensionRanges = part.getRanges(
-                    partition, variableOrdering.indexOf(src.name), trieIterable.minValue, trieIterable.maxValue)
-                    .flatMap(r => Seq(r._1, r._2)).toArray
-
-                  new RangeFilteredTrieIterator(partition, firstDimensionRanges, secondDimensionRanges, ti)
+                  val ti = trieIterable.trieIterator(partition, partitioning, variableOrdering.indexOf(dst.name), variableOrdering
+                    .indexOf(src.name))
+                  ti
+//                  val firstDimensionRanges = part.getRanges(
+//                    partition, variableOrdering.indexOf(dst.name), trieIterable.minValue, trieIterable.maxValue)
+//                    .flatMap(r => Seq(r._1, r._2)).toArray
+//                  val secondDimensionRanges = part.getRanges(
+//                    partition, variableOrdering.indexOf(src.name), trieIterable.minValue, trieIterable.maxValue)
+//                    .flatMap(r => Seq(r._1, r._2)).toArray
+//
+//                  new RangeFilteredTrieIterator(partition, firstDimensionRanges, secondDimensionRanges, ti)
 //                  trieIterables(1).asInstanceOf[CSRTrieIterable].trieIterator(
 //                    partition,
 //                    partitioning,
@@ -95,15 +97,17 @@ class JoinSpecification(joinPattern: Seq[Pattern], val variableOrdering: Seq[Str
 //                  )
                 } else {
                   val trieIterable = trieIterables.head.asInstanceOf[CSRTrieIterable]
-                  val ti = trieIterable.trieIterator
-                  val firstDimensionRanges = part.getRanges(
-                    partition, variableOrdering.indexOf(src.name), trieIterable.minValue, trieIterable.maxValue)
-                    .flatMap(r => Seq(r._1, r._2)).toArray
-                  val secondDimensionRanges = part.getRanges(
-                    partition, variableOrdering.indexOf(dst.name), trieIterable.minValue, trieIterable.maxValue)
-                    .flatMap(r => Seq(r._1, r._2)).toArray
+//                  val ti = trieIterable.trieIterator
+//                  val firstDimensionRanges = part.getRanges(
+//                    partition, variableOrdering.indexOf(src.name), trieIterable.minValue, trieIterable.maxValue)
+//                    .flatMap(r => Seq(r._1, r._2)).toArray
+//                  val secondDimensionRanges = part.getRanges(
+//                    partition, variableOrdering.indexOf(dst.name), trieIterable.minValue, trieIterable.maxValue)
+//                    .flatMap(r => Seq(r._1, r._2)).toArray
 
-                  new RangeFilteredTrieIterator(partition, firstDimensionRanges, secondDimensionRanges, ti)
+                  val ti = trieIterable.trieIterator(partition, partitioning, variableOrdering.indexOf(src.name), variableOrdering.indexOf(dst.name))
+                  ti
+//                  new RangeFilteredTrieIterator(partition, firstDimensionRanges, secondDimensionRanges, ti)
                   // TODO use TrieIterator directly for a single range
 //                  new MultiRangePartitionTrieIterator(Array(trieIterable.minValue, trieIterable.maxValue), Array(trieIterable.minValue, trieIterable.maxValue), ti)
 //                  trieIterables(0).asInstanceOf[CSRTrieIterable].trieIterator(

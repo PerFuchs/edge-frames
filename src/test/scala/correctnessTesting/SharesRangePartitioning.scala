@@ -1,14 +1,14 @@
 package correctnessTesting
 
-import experiments.Datasets.loadAmazonDataset
+import experiments.Datasets._
 import experiments.GraphWCOJ
 import org.scalatest.{BeforeAndAfterAll, FlatSpec}
 import partitioning.{AllTuples, Shares, SharesRange}
 import testing.Utils._
 
 class SharesRangePartitioning extends FlatSpec with CorrectnessTest with BeforeAndAfterAll {
-  val DATASET_PATH = getDatasetPath("amazon-0302")
-  val ds = loadAmazonDataset(DATASET_PATH, sp).cache()
+  val DATASET_PATH = getDatasetPath("soc-LiveJournal1")
+  val ds = loadLiveJournalDataset(sp, DATASET_PATH).cache()
 
   override def beforeAll(): Unit = {
     wcojConfig.setJoinAlgorithm(GraphWCOJ)

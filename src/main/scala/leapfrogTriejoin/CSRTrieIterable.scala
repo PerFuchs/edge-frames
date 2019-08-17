@@ -2,6 +2,7 @@ package leapfrogTriejoin
 
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
+import partitioning.shares.Hypercube
 import partitioning.{Partitioning, SharesRange}
 
 import scala.collection.mutable
@@ -31,6 +32,146 @@ class CSRTrieIterable(private[this] val verticeIDs: Array[Long],
     new TrieIteratorImpl(partition, partitioning, dimensionFirstLevel, dimensionSecondLevel)
   }
 
+  var ranges: Map[Int, Seq[(Int, Int)]] = null
+
+  // TODO currently I get different ranges for dst accesible TrieIterators because they come from different CSRTrieIterables for which
+  //  one uses outdegrees and the other uses indegrees
+  def initRanges(partitioning: SharesRange): Unit = {
+        println("Init rangews")
+    val start = System.nanoTime()
+        ranges = partitioning.hypercube.get.dimensionSizes.zipWithIndex.map(
+          d => (d._2, getOutdegreeBalancedRanges(d._1))).toMap
+        println(s"Done init range: ${(System.nanoTime() - start) / 1e9} Ranges: ${ranges.mkString(", ")}")
+  }
+
+  def getOutdegreeBalancedRanges(numRanges: Int): Seq[(Int, Int)] = {
+    val upper = edgeIndices.length - 1
+
+    val totalOutdegree = edgeIndices(edgeIndices.length - 1)
+    val outdegreePerRange = totalOutdegree / numRanges
+
+
+    val ranges = mutable.Buffer[(Int, Int)]()
+    var i = 0
+    var currentOffsetSum = 0
+    var currentRangeStart = 0
+    while (i < upper) {
+      currentOffsetSum += edgeIndices(i)
+      if (currentOffsetSum > outdegreePerRange) {
+        ranges.append((currentRangeStart, i + 1))
+        currentRangeStart = i + 1
+        currentOffsetSum = 0
+      }
+      i += 1
+    }
+    if (ranges.last._2 != upper) {
+      ranges.append((currentRangeStart, upper))
+    }
+    require(ranges.size == numRanges)
+    ranges
+
+    //
+    //    val ranges = (0 until numRanges).map(i => (i * rangeSize, if (i == numRanges - 1) {
+    //      upper
+    //    } else {
+    //      (i + 1) * rangeSize
+    //    })).toArray
+    //
+    //    var maxRangeIndex = getMaxRange(ranges)
+    //    var minRangeIndex = getMinRange(ranges)
+    //
+    ////    println(ranges.mkString(", "))
+    //
+    //    val limit = 0.99 // 1% size difference aim
+    //
+    //    while (getRangeSize(ranges(minRangeIndex)).toDouble / getRangeSize(ranges(maxRangeIndex)) < limit ) {
+    ////      println(getRangeSize(ranges(minRangeIndex)).toDouble / getRangeSize(ranges(maxRangeIndex)))
+    //      balanceRanges(ranges, minRangeIndex, maxRangeIndex)
+    //      maxRangeIndex = getMaxRange(ranges)
+    //      minRangeIndex = getMinRange(ranges)
+    //    }
+    ranges
+  }
+
+  //  private def balanceRanges(ranges: Array[(Int, Int)], minRangeIndex: Int, maxRangeIndex: Int): Unit = {
+  //    val differenceHalf = (getRangeSize(ranges(maxRangeIndex)) - getRangeSize(ranges(minRangeIndex))) / 2
+  //
+  ////    println(differenceHalf)
+  //
+  //    assert(differenceHalf< getRangeSize(ranges(minRangeIndex)))
+  //    if (minRangeIndex < maxRangeIndex) {
+  //      var i = ranges(minRangeIndex)._2
+  //      do {
+  //        i += 1
+  //      } while(edgeIndices(i) - edgeIndices(ranges(minRangeIndex)._2) < differenceHalf)
+  //      i -= 1  // Smaller difference not equal or bigger
+  //
+  //      val adjustment = i - ranges(minRangeIndex)._2
+  //
+  //
+  //      ranges(minRangeIndex) = (ranges(minRangeIndex)._1, ranges(minRangeIndex)._2 + adjustment)
+  //
+  //      i = minRangeIndex + 1
+  //      while(i < maxRangeIndex) {
+  //        ranges(i) = (ranges(i)._1 + adjustment, ranges(i)._2 + adjustment)
+  //        i += 1
+  //      }
+  //      ranges(maxRangeIndex) = (ranges(maxRangeIndex)._1 + adjustment, ranges(maxRangeIndex)._2)
+  //    } else if (maxRangeIndex < minRangeIndex) {
+  //      var i = ranges(minRangeIndex)._1
+  ////      println("i", i)
+  //      do {
+  //        i -= 1
+  ////        println("i", i)
+  //      } while(edgeIndices(ranges(minRangeIndex)._1) - edgeIndices(i) < differenceHalf)
+  //      i += 1  // Smaller difference not equal or bigger
+  //
+  //      val adjustment = ranges(minRangeIndex)._1 - i
+  //
+  //      ranges(minRangeIndex) = (ranges(minRangeIndex)._1 - adjustment, ranges(minRangeIndex)._2)
+  //
+  //      i = minRangeIndex - 1
+  //      while(maxRangeIndex < i) {
+  //        ranges(i) = (ranges(i)._1 - adjustment, ranges(i)._2 - adjustment)
+  //        i -= 1
+  //      }
+  //      ranges(maxRangeIndex) = (ranges(maxRangeIndex)._1, ranges(maxRangeIndex)._2 - adjustment)
+  //    }
+  //  }
+
+  private def getMaxRange(ranges: Seq[(Int, Int)]): Int = {
+    var i = 0
+    var maxRange = ranges.head
+    var index = 0
+    while (i < ranges.length) {
+      if (getRangeSize(maxRange) < getRangeSize(ranges(i))) {
+        maxRange = ranges(i)
+        index = i
+      }
+      i += 1
+    }
+    index
+  }
+
+  private def getMinRange(ranges: Seq[(Int, Int)]): Int = {
+    var i = 0
+    var minRange = ranges.head
+    var index = 0
+    while (i < ranges.length) {
+      if (getRangeSize(ranges(i)) < getRangeSize(minRange)) {
+        minRange = ranges(i)
+        index = i
+      }
+      i += 1
+    }
+    index
+  }
+
+  private def getRangeSize(range: (Int, Int)): Int = {
+    edgeIndices(range._2) - edgeIndices(range._1)
+  }
+
+
   // TODO sort out range filtering functionality, either in here or in MultiRangePartitionTrieIterator
   class TrieIteratorImpl(
                           val partition: Option[Int],
@@ -50,19 +191,22 @@ class CSRTrieIterable(private[this] val verticeIDs: Array[Long],
       case Some(SharesRange(Some(hypercube), _)) => {
         val upper = edgeIndices.length - 1
         val coordinate = hypercube.getCoordinate(partition.get)
+
+        //        val (fl, fu) = ranges(dimensionFirstLevel.get)(coordinate(dimensionFirstLevel.get))
+        //        val (sl, su) = ranges(dimensionSecondLevel.get)(coordinate(dimensionSecondLevel.get))
         val (fl, fu) = if (dimensionFirstLevel.get == 1) {
           getPartitionBoundsInRange(0, upper, coordinate(dimensionFirstLevel.get), hypercube.dimensionSizes(dimensionFirstLevel.get),
             true)
         } else {
           getPartitionBoundsInRange(0, upper, coordinate(dimensionFirstLevel.get), hypercube.dimensionSizes(dimensionFirstLevel.get),
-            false)
+            true)
         }
         val (sl, su) = if (dimensionSecondLevel.get == 1) {
           getPartitionBoundsInRange(0, upper, coordinate(dimensionSecondLevel.get), hypercube.dimensionSizes(dimensionSecondLevel.get),
             true)
         } else {
           getPartitionBoundsInRange(0, upper, coordinate(dimensionSecondLevel.get), hypercube.dimensionSizes(dimensionSecondLevel.get),
-            false)
+            true)
         }
         (fl, fu, sl, su)
       }
@@ -71,6 +215,8 @@ class CSRTrieIterable(private[this] val verticeIDs: Array[Long],
       }
     }
 
+    //    println(s"Partition: ${partition.get} bounds: ", firstLevelLowerBound, firstLevelUpperBound, secondLevelLowerBound,
+    //      secondLevelUpperBound)
 
     private[this] var isAtEnd = verticeIDs.length == 0
 
@@ -95,7 +241,7 @@ class CSRTrieIterable(private[this] val verticeIDs: Array[Long],
         lower + partition * partitionSize
       } else {
         if (partition == numPartitions - 1) {
-           lower
+          lower
         } else {
           upper - (partition + 1) * partitionSize
         }
@@ -170,26 +316,27 @@ class CSRTrieIterable(private[this] val verticeIDs: Array[Long],
 
     override def seek(key: Long): Boolean = {
       assert(!atEnd)
-      if (keyValue < key) {  // TODO quickfix, why does this call even happen, clique3 either amazon0302 or liveJournal
-        assert(keyValue < key)
-        if (depth == 0) {
-          srcPosition = key.toInt
-          if (srcPosition < edgeIndices.length - 1 && // TODO srcPosition should never be bigger than edgeIndices.lenght -  1, investigate
-            edgeIndices(srcPosition) == edgeIndices(srcPosition + 1)) { // TODO does srcPosition < edgeIndices.length - 1 ruin
-            // predicatability?
-            moveToNextSrcPosition()
-          }
-          isAtEnd = firstLevelUpperBound <= srcPosition
-          keyValue = srcPosition.toLong
-          isAtEnd
-        } else {
-          dstPosition = ArraySearch.find(edges, key, dstPosition, edgeIndices(srcPosition + 1))
-          isAtEnd = dstPosition == edgeIndices(srcPosition + 1) || secondLevelUpperBound <= edges(dstPosition)
-          if (!isAtEnd) {
-            keyValue = edges(dstPosition)
-          }
+      // TODO this quickfix is problematic when I use the internal range partitioning
+      //      if (keyValue < key) { // TODO quickfix, why does this call even happen, clique3 either amazon0302 or liveJournal
+      assert(keyValue < key)
+      if (depth == 0) {
+        srcPosition = key.toInt
+        if (srcPosition < edgeIndices.length - 1 && // TODO srcPosition should never be bigger than edgeIndices.lenght -  1, investigate
+          edgeIndices(srcPosition) == edgeIndices(srcPosition + 1)) { // TODO does srcPosition < edgeIndices.length - 1 ruin
+          // predicatability?
+          moveToNextSrcPosition()
+        }
+        isAtEnd = firstLevelUpperBound <= srcPosition
+        keyValue = srcPosition.toLong
+        isAtEnd
+      } else {
+        dstPosition = ArraySearch.find(edges, key, dstPosition, edgeIndices(srcPosition + 1))
+        isAtEnd = dstPosition == edgeIndices(srcPosition + 1) || secondLevelUpperBound <= edges(dstPosition)
+        if (!isAtEnd) {
+          keyValue = edges(dstPosition)
         }
       }
+      //      }
       isAtEnd
     }
 
