@@ -10,7 +10,7 @@ import scala.collection.mutable.ArrayBuffer
 // TODO serializing could be improved by sending common parts of the array only once
 class CSRTrieIterable(private[this] val verticeIDs: Array[Long],
                       val edgeIndices: Array[Int],
-                      private[this] val edges: Array[Long]) extends TrieIterable with Serializable {
+                      private[this] val edges: Array[Int]) extends TrieIterable with Serializable {
 
   override def trieIterator: TrieIteratorImpl = {
     trieIterator(None, None, None, None)
@@ -101,7 +101,6 @@ class CSRTrieIterable(private[this] val verticeIDs: Array[Long],
         }
       }
 
-
       val upperBound = if (fromBelow) {
         if (partition == numPartitions - 1) {
           upper
@@ -183,7 +182,7 @@ class CSRTrieIterable(private[this] val verticeIDs: Array[Long],
           keyValue = srcPosition.toLong
           isAtEnd
         } else {
-          dstPosition = ArraySearch.find(edges, key, dstPosition, edgeIndices(srcPosition + 1))
+          dstPosition = IntArraySearch.find(edges, key.toInt, dstPosition, edgeIndices(srcPosition + 1))
           isAtEnd = dstPosition == edgeIndices(srcPosition + 1) || secondLevelUpperBound <= edges(dstPosition)
           if (!isAtEnd) {
             keyValue = edges(dstPosition)
@@ -337,16 +336,16 @@ object CSRTrieIterable {
       verticeIDsBuffer.append(lastVertice)
 
       // TODO Optimize
-      val edgesDstArray = edgesDstBuffer.toArray.map(dst => verticeIDToIndex(dst))
-      val edgesSrcArray = edgesSrcBuffer.toArray.map(src => verticeIDToIndex(src))
+      val edgesDstArray = edgesDstBuffer.toArray.map(dst => verticeIDToIndex(dst)).map(_.toInt)
+      val edgesSrcArray = edgesSrcBuffer.toArray.map(src => verticeIDToIndex(src)).map(_.toInt)
 
       val verticeIDs = verticeIDsBuffer.toArray
 
       (new CSRTrieIterable(verticeIDs, edgeIndicesSrcBuffer.toArray, edgesDstArray), new CSRTrieIterable(verticeIDs, edgeIndicesDstBuffer.toArray,
         edgesSrcArray))
     } else {
-      (new CSRTrieIterable(Array[Long](), Array[Int](), Array[Long]()),
-        new CSRTrieIterable(Array[Long](), Array[Int](), Array[Long]()))
+      (new CSRTrieIterable(Array[Long](), Array[Int](), Array[Int]()),
+        new CSRTrieIterable(Array[Long](), Array[Int](), Array[Int]()))
     }
   }
 
