@@ -8,7 +8,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 // TODO serializing could be improved by sending common parts of the array only once
-class CSRTrieIterable(private[this] val verticeIDs: Array[Long],
+class CSRTrieIterable(private[this] val verticeIDs: Array[Int],
                       val edgeIndices: Array[Int],
                       private[this] val edges: Array[Int]) extends TrieIterable with Serializable {
 
@@ -86,7 +86,7 @@ class CSRTrieIterable(private[this] val verticeIDs: Array[Long],
 
     private[this] var dstPosition = 0
 
-    private[this] var keyValue = 0L
+    private[this] var keyValue = 0
 
     private def getPartitionBoundsInRange(lower: Int, upper: Int, partition: Int, numPartitions: Int, fromBelow: Boolean): (Int, Int) = {
       val totalSize = upper - lower
@@ -119,7 +119,7 @@ class CSRTrieIterable(private[this] val verticeIDs: Array[Long],
 
       if (depth == 0) {
         srcPosition = firstSourcePosition
-        keyValue = srcPosition.toLong
+        keyValue = srcPosition
       } else if (depth == 1) { // TODO predicatable
         dstPosition = edgeIndices(srcPosition)
         isAtEnd = secondLevelUpperBound <= edges(dstPosition)
@@ -143,7 +143,7 @@ class CSRTrieIterable(private[this] val verticeIDs: Array[Long],
       }
     }
 
-    override def key: Long = {
+    override def key: Int = {
       keyValue
     }
 
@@ -152,7 +152,7 @@ class CSRTrieIterable(private[this] val verticeIDs: Array[Long],
       if (depth == 0) {
         moveToNextSrcPosition()
         isAtEnd = firstLevelUpperBound <= srcPosition
-        keyValue = srcPosition.toLong
+        keyValue = srcPosition
       } else {
         dstPosition += 1
         isAtEnd = dstPosition == edgeIndices(srcPosition + 1) || secondLevelUpperBound <= edges(dstPosition)
@@ -167,7 +167,7 @@ class CSRTrieIterable(private[this] val verticeIDs: Array[Long],
       isAtEnd
     }
 
-    override def seek(key: Long): Boolean = {
+    override def seek(key: Int): Boolean = {
       assert(!atEnd)
       if (keyValue < key) {  // TODO quickfix, why does this call even happen, clique3 either amazon0302 or liveJournal
         assert(keyValue < key)
@@ -179,7 +179,7 @@ class CSRTrieIterable(private[this] val verticeIDs: Array[Long],
             moveToNextSrcPosition()
           }
           isAtEnd = firstLevelUpperBound <= srcPosition
-          keyValue = srcPosition.toLong
+          keyValue = srcPosition
           isAtEnd
         } else {
           dstPosition = IntArraySearch.find(edges, key.toInt, dstPosition, edgeIndices(srcPosition + 1))
@@ -201,14 +201,14 @@ class CSRTrieIterable(private[this] val verticeIDs: Array[Long],
     }
 
     // For testing
-    def translate(key: Int): Long = {
+    def translate(key: Int): Int = {
       verticeIDs(key)
     }
 
-    def translate(keys: Array[Long]): Array[Long] = {
+    def translate(keys: Array[Int]): Array[Int] = {
       var i = 0
       while (i < keys.length) {
-        keys(i) = verticeIDs(keys(i).toInt)
+        keys(i) = verticeIDs(keys(i))
         i += 1
       }
       keys
@@ -232,7 +232,7 @@ class CSRTrieIterable(private[this] val verticeIDs: Array[Long],
       c
     }
 
-    private def copy(atEnd: Boolean, depth: Int, srcPosition: Int, dstPosition: Int, keyValue: Long) {
+    private def copy(atEnd: Boolean, depth: Int, srcPosition: Int, dstPosition: Int, keyValue: Int) {
       isAtEnd = atEnd
       this.depth = depth
       this.srcPosition = srcPosition
@@ -266,13 +266,13 @@ class CSRTrieIterable(private[this] val verticeIDs: Array[Long],
   }
 
   // For testing
-  def getVerticeIDs: Array[Long] = {
+  def getVerticeIDs: Array[Int] = {
     verticeIDs
   }
 
   // For testing
-  def getTranslatedEdges: Array[Long] = {
-    edges.map(ei => verticeIDs(ei.toInt))
+  def getTranslatedEdges: Array[Int] = {
+    edges.map(ei => verticeIDs(ei))
   }
 
   // For testing
@@ -341,11 +341,13 @@ object CSRTrieIterable {
 
       val verticeIDs = verticeIDsBuffer.toArray
 
-      (new CSRTrieIterable(verticeIDs, edgeIndicesSrcBuffer.toArray, edgesDstArray), new CSRTrieIterable(verticeIDs, edgeIndicesDstBuffer.toArray,
+      (new CSRTrieIterable(verticeIDs.map(_.toInt), edgeIndicesSrcBuffer.toArray, edgesDstArray),
+        new CSRTrieIterable(verticeIDs.map(_.toInt),
+        edgeIndicesDstBuffer.toArray,
         edgesSrcArray))
     } else {
-      (new CSRTrieIterable(Array[Long](), Array[Int](), Array[Int]()),
-        new CSRTrieIterable(Array[Long](), Array[Int](), Array[Int]()))
+      (new CSRTrieIterable(Array[Int](), Array[Int](), Array[Int]()),
+        new CSRTrieIterable(Array[Int](), Array[Int](), Array[Int]()))
     }
   }
 

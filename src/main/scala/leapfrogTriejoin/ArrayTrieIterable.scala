@@ -47,7 +47,7 @@ class ArrayTrieIterable(iter: Iterator[InternalRow]) extends TrieIterable {
     private[this] var isAtEnd = numRows == 0
 
     private[this] val columns = Array(tuples.column(0).asInstanceOf[ExposedArrayColumnVector].longData, tuples.column(1).asInstanceOf[ExposedArrayColumnVector].longData)
-    private[this] var currentColumn: Array[Long] = null
+    private[this] var currentColumn: Array[Int] = null
     private[this] var currentPosition: Int = -1
     private[this] var currentEnd: Int = -1
 
@@ -93,7 +93,7 @@ class ArrayTrieIterable(iter: Iterator[InternalRow]) extends TrieIterable {
       isAtEnd = false
     }
 
-    override def key: Long = {
+    override def key: Int = {
       assert(!atEnd, "Calling key on TrieIterator atEnd is illegal.")
       currentColumn(currentPosition)
     }
@@ -113,9 +113,9 @@ class ArrayTrieIterable(iter: Iterator[InternalRow]) extends TrieIterable {
       isAtEnd
     }
 
-    override def seek(key: Long): Boolean = {
+    override def seek(key: Int): Boolean = {
       if (key != this.key) {
-        currentPosition = ArraySearch.find(currentColumn, key, currentPosition, end(depth))  // TODO use currentEnd
+        currentPosition = IntArraySearch.find(currentColumn, key, currentPosition, end(depth))  // TODO use currentEnd
         updateAtEnd()
       }
       isAtEnd
@@ -127,7 +127,7 @@ class ArrayTrieIterable(iter: Iterator[InternalRow]) extends TrieIterable {
     }
 
     @inline
-    override def translate(keys: Array[Long]): Array[Long] = {
+    override def translate(keys: Array[Int]): Array[Int] = {
       keys
     }
 

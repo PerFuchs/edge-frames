@@ -56,7 +56,7 @@ class WorkstealingLeapfrogjoin(queue: ConcurrentLinkedQueue[Int],
     isAtEnd = isAtEnd || localLeapfrog.atEnd
   }
 
-  override def key: Long = {
+  override def key: Int = {
     localLeapfrog.key
   }
 
@@ -64,7 +64,7 @@ class WorkstealingLeapfrogjoin(queue: ConcurrentLinkedQueue[Int],
     isAtEnd
   }
 
-  override def leapfrogSeek(key: Long): Unit = {
+  override def leapfrogSeek(key: Int): Unit = {
     ??? // TODO maybe implement?
   }
 }

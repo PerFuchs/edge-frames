@@ -117,6 +117,7 @@ case class GraphWCOJExec(outputVariables: Seq[Attribute],
                 false
               } else {
                 val start = System.nanoTime()
+
                 row = join.next()
                 joinTimeAcc += (System.nanoTime() - start)
                 true

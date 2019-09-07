@@ -72,7 +72,7 @@ class LeapfrogTriejoin(trieIterators: Map[EdgeRelationship, TrieIterator],
     ).toArray
 
   private[this] var depth = -1
-  private[this] var bindings = Array.fill(allVariables.size)(-1L)
+  private[this] var bindings = Array.fill(allVariables.size)(-1)
   var atEnd: Boolean = trieIterators.values.exists(i => i.atEnd) // Assumes connected join?
 
   if (!atEnd) {
@@ -84,15 +84,22 @@ class LeapfrogTriejoin(trieIterators: Map[EdgeRelationship, TrieIterator],
   val translator = trieIterators.values.head
 
   // TODO avoid copying
+  private[this] val longTuple = new Array[Long](maxDepth + 1)
+
   def next(): Array[Long] = {
     if (atEnd) {
       throw new IllegalStateException("Cannot call next of LeapfrogTriejoin when already at end.")
     }
-    val tuple = new Array[Long](maxDepth + 1) // TODO if I don't use a new array each time this will be faster
+    val tuple = new Array[Int](maxDepth + 1) // TODO if I don't use a new array each time this will be faster
     bindings.copyToArray(tuple)
     translator.translate(tuple)
     moveToNextTuple()
-    tuple
+    var i = 0
+    while (i < longTuple.length) {
+      longTuple(i) = tuple(i)
+      i += 1
+    }
+    longTuple
   }
 
   private def moveToNextTuple(): Unit = {
@@ -168,7 +175,7 @@ class LeapfrogTriejoin(trieIterators: Map[EdgeRelationship, TrieIterator],
   }
 
   @inline
-  private def bindingsContainsBigger(key: Long): Boolean = {
+  private def bindingsContainsBigger(key: Int): Boolean = {
     var i = 0
     var contains = false
     while (i < bindings.length) {
@@ -179,7 +186,7 @@ class LeapfrogTriejoin(trieIterators: Map[EdgeRelationship, TrieIterator],
   }
 
   @inline
-  private def bindingsContains(key: Long): Boolean = {
+  private def bindingsContains(key: Int): Boolean = {
     var i = 0
     var contains = false
     while (i < bindings.length) {

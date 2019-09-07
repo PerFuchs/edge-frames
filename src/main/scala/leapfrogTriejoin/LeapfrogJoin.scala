@@ -9,7 +9,7 @@ class LeapfrogJoin(var iterators: Array[LinearIterator]) extends LeapfrogJoinInt
 
   var atEnd: Boolean = false
   private[this] var p = 0
-  var key = 0L
+  var key = 0
 
   def init(): Unit = {
     iteratorAtEndExists()
@@ -72,7 +72,7 @@ class LeapfrogJoin(var iterators: Array[LinearIterator]) extends LeapfrogJoinInt
   // Public for testing, returns p for testing
   def sortIterators(): Int = {
     var i = 0
-    var max = 0L
+    var max = 0
     var maxPosition = 0
     while (i < iterators.length) {
       val key = iterators(i).key
@@ -133,7 +133,7 @@ class LeapfrogJoin(var iterators: Array[LinearIterator]) extends LeapfrogJoinInt
     }
   }
 
-  def leapfrogSeek(key: Long): Unit = {
+  def leapfrogSeek(key: Int): Unit = {
     iterators(p).seek(key)
     if (iterators(p).atEnd) {
       atEnd = true

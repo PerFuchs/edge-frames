@@ -49,7 +49,7 @@ class RangeFilteredTrieIterator(
     isAtEnd = trieIterator.atEnd
   }
 
-  override def key: Long = {
+  override def key: Int = {
     trieIterator.key
   }
 
@@ -90,7 +90,7 @@ class RangeFilteredTrieIterator(
     }
   }
 
-  override def seek(key: Long): Boolean = {
+  override def seek(key: Int): Boolean = {
     isAtEnd = trieIterator.seek(key)
     updateRange()
     isAtEnd
@@ -100,7 +100,7 @@ class RangeFilteredTrieIterator(
     isAtEnd
   }
 
-  override def translate(keys: Array[Long]): Array[Long] = {
+  override def translate(keys: Array[Int]): Array[Int] = {
     trieIterator.translate(keys)
   }
 

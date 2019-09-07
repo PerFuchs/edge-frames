@@ -40,7 +40,7 @@ class MaterializingLeapfrogJoin(var iterators: Array[TrieIterator],
   require(iterators.nonEmpty, "iterators cannot be empty")
 
   private[this] var isAtEnd: Boolean = false
-  private[this] var keyValue = 0L
+  private[this] var keyValue = 0
 
   /**
     * true when this join has been initialized once before.
@@ -54,7 +54,7 @@ class MaterializingLeapfrogJoin(var iterators: Array[TrieIterator],
     * Position in the materializedValues array used to iterator over it.
     */
   private[this] var position = 0
-  private[this] var materializedValues: Array[Long] = new Array[Long](200)
+  private[this] var materializedValues: Array[Int] = new Array[Int](200)
 
   /**
     * fallback to a normal/none-materialized LeapfrogJoin in case all iterators are at the first level or materializing should not be
@@ -124,13 +124,13 @@ class MaterializingLeapfrogJoin(var iterators: Array[TrieIterator],
   private def materialize(): Unit = {
     if (secondLevelIterators.length == 1) {
       if (materializedValues.length < secondLevelIterators(0).estimateSize + 1) {
-        materializedValues = new Array[Long](secondLevelIterators(0).estimateSize + 1)
+        materializedValues = new Array[Int](secondLevelIterators(0).estimateSize + 1)
       }
       materializeSingleIterator(secondLevelIterators(0))
     } else {
       moveSmallestIteratorFirst()
       if (materializedValues.length < secondLevelIterators(0).estimateSize + 1) {
-        materializedValues = new Array[Long](secondLevelIterators(0).estimateSize + 1)
+        materializedValues = new Array[Int](secondLevelIterators(0).estimateSize + 1)
       }
 
       intersect(secondLevelIterators(0), secondLevelIterators(1))
@@ -269,7 +269,7 @@ class MaterializingLeapfrogJoin(var iterators: Array[TrieIterator],
   }
 
   @inline
-  private def filterAgainstFirstLevelIterators(value: Long): Boolean = {
+  private def filterAgainstFirstLevelIterators(value: Int): Boolean = {
     var i = 0
     var in = true
     while (!isAtEnd && i < firstLevelIterators.length) {
@@ -283,7 +283,7 @@ class MaterializingLeapfrogJoin(var iterators: Array[TrieIterator],
     in
   }
 
-  override def key: Long = {
+  override def key: Int = {
     keyValue
   }
 
@@ -291,7 +291,7 @@ class MaterializingLeapfrogJoin(var iterators: Array[TrieIterator],
     isAtEnd
   }
 
-  override def leapfrogSeek(key: Long): Unit = {
+  override def leapfrogSeek(key: Int): Unit = {
     if (fallback != null) {
       fallback.leapfrogSeek(key)
       isAtEnd = fallback.atEnd

@@ -2,7 +2,7 @@ package leapfrogTriejoin
 
 trait LinearIterator extends Cloneable {
 
-  def key: Long // O (1)
+  def key: Int // O (1)
 
   def next(): Unit  // O(log N)
     /**
@@ -11,7 +11,7 @@ trait LinearIterator extends Cloneable {
 
   def atEnd: Boolean
 
-  def seek(key: Long): Boolean  // O(log N)
+  def seek(key: Int): Boolean  // O(log N)
 
   /**
     *
