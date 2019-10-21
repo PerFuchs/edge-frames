@@ -1,6 +1,8 @@
 package leapfrogTriejoin
 
-import scala.math.{min, floor}
+import experiments.SeekCounters
+
+import scala.math.{floor, min}
 import org.apache.hadoop.yarn.webapp.hamlet.HamletSpec.A
 import org.apache.spark.sql.vectorized.ColumnVector
 
@@ -13,8 +15,10 @@ object ArraySearch {
     assert(start < end)
 
     if (end - start < LINEAR_SEARCH_THRESHOLD) {
+      SeekCounters.linearSearch += 1
       linearSearch(values, key, start, end)
     } else {
+      SeekCounters.binarySearch += 1
       binarySearch(values, key, start, end)
     }
   }

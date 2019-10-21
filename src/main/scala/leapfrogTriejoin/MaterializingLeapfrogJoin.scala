@@ -1,5 +1,6 @@
 package leapfrogTriejoin
 
+import experiments.SeekCounters
 import partitioning.{AllTuples, Partitioning, Shares}
 import partitioning.shares.Hash
 
@@ -54,6 +55,7 @@ class MaterializingLeapfrogJoin(var iterators: Array[TrieIterator],
     * Position in the materializedValues array used to iterator over it.
     */
   private[this] var position = 0
+  SeekCounters.maxSize = 200
   private[this] var materializedValues: Array[Long] = new Array[Long](200)
 
   /**
@@ -124,12 +126,16 @@ class MaterializingLeapfrogJoin(var iterators: Array[TrieIterator],
   private def materialize(): Unit = {
     if (secondLevelIterators.length == 1) {
       if (materializedValues.length < secondLevelIterators(0).estimateSize + 1) {
+        SeekCounters.resizes += 1
+        SeekCounters.maxSize = secondLevelIterators(0).estimateSize + 1
         materializedValues = new Array[Long](secondLevelIterators(0).estimateSize + 1)
       }
       materializeSingleIterator(secondLevelIterators(0))
     } else {
       moveSmallestIteratorFirst()
       if (materializedValues.length < secondLevelIterators(0).estimateSize + 1) {
+        SeekCounters.resizes += 1
+        SeekCounters.maxSize = secondLevelIterators(0).estimateSize + 1
         materializedValues = new Array[Long](secondLevelIterators(0).estimateSize + 1)
       }
 
@@ -167,6 +173,7 @@ class MaterializingLeapfrogJoin(var iterators: Array[TrieIterator],
     var i = 0
     while (!iter.atEnd) {
       materializedValues(i) = iter.key
+      SeekCounters.next += 1
       iter.next()
       i += 1
     }
@@ -179,11 +186,14 @@ class MaterializingLeapfrogJoin(var iterators: Array[TrieIterator],
       if (i1.key == i2.key) {
         materializedValues(valueCounter) = i1.key
         valueCounter += 1
+        SeekCounters.next += 2
         i1.next()
         i2.next()
       } else if (i1.key < i2.key) {
+        SeekCounters.firstIntersect += 1
         i1.seek(i2.key)
       } else {
+        SeekCounters.firstIntersect += 1
         i2.seek(i1.key)
       }
     }
@@ -207,6 +217,7 @@ class MaterializingLeapfrogJoin(var iterators: Array[TrieIterator],
     var value = materializedValues(i)
     while (value != -1 && !iter.atEnd) {
       if (value != DELETED_VALUE) {
+        SeekCounters.intersect += 1
         iter.seek(value)
         if (iter.key != value) {
           materializedValues(i) = DELETED_VALUE
@@ -271,6 +282,7 @@ class MaterializingLeapfrogJoin(var iterators: Array[TrieIterator],
     var i = 0
     var in = true
     while (!isAtEnd && i < firstLevelIterators.length) {
+      SeekCounters.firstLevel += 1
       if (!firstLevelIterators(i).seek(value)) {
         in &= firstLevelIterators(i).key == value
       } else {

@@ -1,6 +1,7 @@
 package experiments
 
-import java.io.{BufferedWriter, File, FileOutputStream, FileWriter}
+import java.io.{BufferedWriter, File, FileWriter}
+import java.lang.management.ManagementFactory
 import java.net.InetAddress
 import java.text.{DecimalFormat, NumberFormat}
 import java.util.{Formatter, Locale}
@@ -9,12 +10,9 @@ import au.com.bytecode.opencsv.CSVWriter
 import experiments.metrics.Metrics
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import partitioning.{AllTuples, Partitioning, Shares}
+import partitioning.{AllTuples, Partitioning}
 import scopt.OParser
 import sparkIntegration.{WCOJ2WCOJExec, WCOJConfiguration}
-
-import java.lang.management.ManagementFactory
-import java.lang.management.RuntimeMXBean
 
 import scala.collection.mutable.ListBuffer
 
@@ -157,7 +155,9 @@ case class WCOJQueryResult(algorithm: Algorithm,
                            algorithmEnd: List[Long],
                            wcojTimes: List[Double],
                            copyTimes: List[Double],
-                           materializationTime: Option[Double]) extends QueryResult {
+                           materializationTime: Option[Double],
+                           seekCounter: SeekCounters
+                          ) extends QueryResult {
   override def time: Double = {
     (end - start) / 1e3
   }
@@ -168,8 +168,6 @@ case class WCOJQueryResult(algorithm: Algorithm,
 }
 
 object ExperimentRunner extends App {
-  var seekCalls = 0
-
   val f = new Formatter(Locale.US)
   val formatter = NumberFormat.getInstance(Locale.US).asInstanceOf[DecimalFormat]
   val symbols = formatter.getDecimalFormatSymbols
@@ -428,12 +426,29 @@ object ExperimentRunner extends App {
       println(
         s"WCOJ took $wcojTimesAverage in average(max: $wcojTimesMax, min: $wcojTimesMin")
       println(s"Spark overhead: ${shortestRep.time - (lastEnd - firstStart) / 1e3}")
+
+      println("Seek Calls")
+      println("all     ", avg(wcojResults.map(r => r.seekCounter.all)))
+      println("sum     ", avg(wcojResults.map(r => r.seekCounter.next)) + avg(wcojResults.map(r => r.seekCounter.noneMats)) +
+        avg(wcojResults.map(r => r.seekCounter.firstLevel)) + avg(wcojResults.map(r => r.seekCounter.intersect)) + avg(wcojResults
+        .map(r => r.seekCounter.firstIntersect)))
+      println("noneMats", avg(wcojResults.map(r => r.seekCounter.noneMats)))
+      println("firstLev", avg(wcojResults.map(r => r.seekCounter.firstLevel)))
+      println("intersec", avg(wcojResults.map(r => r.seekCounter.intersect)))
+      println("finterse", avg(wcojResults.map(r => r.seekCounter.firstIntersect)))
+
+      println("resizes ", avg(wcojResults.map(r => r.seekCounter.resizes)))
+      println("maxSize ", avg(wcojResults.map(r => r.seekCounter.maxSize)))
+
+      println("binSearc", avg(wcojResults.map(r => r.seekCounter.binarySearch)))
+      println("linSearc", avg(wcojResults.map(r => r.seekCounter.linearSearch)))
     }
-    println("Calls to seek:", seekCalls)
-    seekCalls = 0
-    println("")
+
   }
 
+  def avg(s: Seq[Long]): Long = {
+    s.sum / s.size
+  }
 
   private def graphFilenameToCSRFilename(graphFileName: String): String = {
     (graphFileName + ".csrObjects").replace("file://", "")
@@ -550,6 +565,9 @@ object ExperimentRunner extends App {
 
           val algorithmStart = Metrics.masterTimers("algorithmStart")
 
+          val seekCounters = SeekCounters.toCaseClass
+          SeekCounters.reset()
+
           WCOJQueryResult(algorithm,
             query,
             Metrics.lastUsedInitializedPartitioning.get, parallelism, count,
@@ -560,7 +578,8 @@ object ExperimentRunner extends App {
             algorithmEnd.sortBy(_._1).map(_._2),
             joinTimes.sortBy(_._1).map(_._2.toDouble / 1e3),
             copyTimes.sortBy(_._1).map(_._2.toDouble / 1e3),
-            materializationTimes.map(_._2.toDouble / 1e3).headOption
+            materializationTimes.map(_._2.toDouble / 1e3).headOption,
+            seekCounters
           )
         }
         case _: BinaryJoins => {

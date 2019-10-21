@@ -1,5 +1,7 @@
 package leapfrogTriejoin
 
+import experiments.SeekCounters
+
 import scala.collection.mutable
 
 class LeapfrogJoin(var iterators: Array[LinearIterator]) extends LeapfrogJoinInterface {
@@ -106,6 +108,7 @@ class LeapfrogJoin(var iterators: Array[LinearIterator]) extends LeapfrogJoinInt
     var min = iterators(p).key
 
     while (min != max && !iterators(p).seek(max)) {
+      SeekCounters.noneMats += 1
       max = iterators(p).key
 
       if (p < iterators.length - 1) {
@@ -134,6 +137,7 @@ class LeapfrogJoin(var iterators: Array[LinearIterator]) extends LeapfrogJoinInt
   }
 
   def leapfrogSeek(key: Long): Unit = {
+    SeekCounters.noneMats += 1
     iterators(p).seek(key)
     if (iterators(p).atEnd) {
       atEnd = true
