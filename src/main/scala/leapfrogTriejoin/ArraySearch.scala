@@ -7,19 +7,16 @@ import org.apache.hadoop.yarn.webapp.hamlet.HamletSpec.A
 import org.apache.spark.sql.vectorized.ColumnVector
 
 object ArraySearch {
-
-  private val LINEAR_SEARCH_THRESHOLD = 60
-
-  def find(values: Array[Long], key: Long, start: Int, end: Int): Int = {
+  def find(values: Array[Long], key: Long, start: Int, end: Int, linearSearchThreshold: Int): Int = {
     assert(0 <= start)
     assert(start < end)
 
-    if (end - start < LINEAR_SEARCH_THRESHOLD) {
+    if (end - start < linearSearchThreshold) {
       SeekCounters.linearSearch += 1
       linearSearch(values, key, start, end)
     } else {
       SeekCounters.binarySearch += 1
-      binarySearch(values, key, start, end)
+      binarySearch(values, key, start, end, linearSearchThreshold)
     }
   }
 
@@ -37,14 +34,14 @@ object ArraySearch {
   }
 
   @inline
-  def binarySearch(vector: Array[Long], key: Long, start: Int, end: Int): Int = {
+  def binarySearch(vector: Array[Long], key: Long, start: Int, end: Int, linearSearchThreshold: Int): Int = {
     assert(0 <= start)
     assert(start < end)
 
     var L = start
     var R = end
     var M = -1
-    while (L < R - LINEAR_SEARCH_THRESHOLD) {
+    while (L < R - linearSearchThreshold) {
       M = (L + R) >> 1 // x >> 1 === x / 2
 
       if (vector(M) < key) {
