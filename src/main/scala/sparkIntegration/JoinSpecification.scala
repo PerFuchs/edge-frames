@@ -77,40 +77,40 @@ class JoinSpecification(joinPattern: Seq[Pattern], val variableOrdering: Seq[Str
             partitioning match {
               case part @ SharesRange(_, _) => {
                 if (dstAccessibleRelationship(i)) {
-                  val trieIterable = trieIterables(1).asInstanceOf[CSRTrieIterable]
-                  val ti = trieIterable.trieIterator
-                  val firstDimensionRanges = part.getRanges(
-                    partition, variableOrdering.indexOf(dst.name), trieIterable.minValue, trieIterable.maxValue)
-                    .flatMap(r => Seq(r._1, r._2)).toArray
-                  val secondDimensionRanges = part.getRanges(
-                    partition, variableOrdering.indexOf(src.name), trieIterable.minValue, trieIterable.maxValue)
-                    .flatMap(r => Seq(r._1, r._2)).toArray
-
-                  new RangeFilteredTrieIterator(partition, firstDimensionRanges, secondDimensionRanges, ti)
-//                  trieIterables(1).asInstanceOf[CSRTrieIterable].trieIterator(
-//                    partition,
-//                    partitioning,
-//                    variableOrdering.indexOf(dst.name),
-//                    variableOrdering.indexOf(src.name)
-//                  )
+//                  val trieIterable = trieIterables(1).asInstanceOf[CSRTrieIterable]
+//                  val ti = trieIterable.trieIterator
+//                  val firstDimensionRanges = part.getRanges(
+//                    partition, variableOrdering.indexOf(dst.name), trieIterable.minValue, trieIterable.maxValue)
+//                    .flatMap(r => Seq(r._1, r._2)).toArray
+//                  val secondDimensionRanges = part.getRanges(
+//                    partition, variableOrdering.indexOf(src.name), trieIterable.minValue, trieIterable.maxValue)
+//                    .flatMap(r => Seq(r._1, r._2)).toArray
+//
+//                  new RangeFilteredTrieIterator(partition, firstDimensionRanges, secondDimensionRanges, ti)
+                  trieIterables(1).asInstanceOf[CSRTrieIterable].trieIterator(
+                    partition,
+                    partitioning,
+                    variableOrdering.indexOf(dst.name),
+                    variableOrdering.indexOf(src.name)
+                  )
                 } else {
-                  val trieIterable = trieIterables.head.asInstanceOf[CSRTrieIterable]
-                  val ti = trieIterable.trieIterator
-                  val firstDimensionRanges = part.getRanges(
-                    partition, variableOrdering.indexOf(src.name), trieIterable.minValue, trieIterable.maxValue)
-                    .flatMap(r => Seq(r._1, r._2)).toArray
-                  val secondDimensionRanges = part.getRanges(
-                    partition, variableOrdering.indexOf(dst.name), trieIterable.minValue, trieIterable.maxValue)
-                    .flatMap(r => Seq(r._1, r._2)).toArray
+//                  val trieIterable = trieIterables.head.asInstanceOf[CSRTrieIterable]
+//                  val ti = trieIterable.trieIterator
+//                  val firstDimensionRanges = part.getRanges(
+//                    partition, variableOrdering.indexOf(src.name), trieIterable.minValue, trieIterable.maxValue)
+//                    .flatMap(r => Seq(r._1, r._2)).toArray
+//                  val secondDimensionRanges = part.getRanges(
+//                    partition, variableOrdering.indexOf(dst.name), trieIterable.minValue, trieIterable.maxValue)
+//                    .flatMap(r => Seq(r._1, r._2)).toArray
+//
+//                  new RangeFilteredTrieIterator(partition, firstDimensionRanges, secondDimensionRanges, ti)
 
-                  new RangeFilteredTrieIterator(partition, firstDimensionRanges, secondDimensionRanges, ti)
-//                  new MultiRangePartitionTrieIterator(Array(trieIterable.minValue, trieIterable.maxValue), Array(trieIterable.minValue, trieIterable.maxValue), ti)
-//                  trieIterables(0).asInstanceOf[CSRTrieIterable].trieIterator(
-//                    partition,
-//                    partitioning,
-//                    variableOrdering.indexOf(src.name),
-//                    variableOrdering.indexOf(dst.name)
-//                  )
+                  trieIterables(0).asInstanceOf[CSRTrieIterable].trieIterator(
+                    partition,
+                    partitioning,
+                    variableOrdering.indexOf(src.name),
+                    variableOrdering.indexOf(dst.name)
+                  )
                 }
               }
               case _ => {

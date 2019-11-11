@@ -133,7 +133,6 @@ class CSRTrieIterable(private[this] val verticeIDs: Array[Long],
         }
       }
 
-      assert(!isAtEnd, "open cannot be called when atEnd")
       assert(depth < 2)
     }
 
@@ -172,8 +171,8 @@ class CSRTrieIterable(private[this] val verticeIDs: Array[Long],
 
     override def seek(key: Long): Boolean = {
       assert(!atEnd)
-      if (keyValue < key) {
-        assert(keyValue < key)
+//      if (keyValue < key) {
+//        assert(keyValue < key)
         if (depth == 0) {
           srcPosition = key.toInt
           if (srcPosition < edgeIndices.length - 1 &&
@@ -190,7 +189,7 @@ class CSRTrieIterable(private[this] val verticeIDs: Array[Long],
             keyValue = edges(dstPosition)
           }
         }
-      }
+//      }
       isAtEnd
     }
 
