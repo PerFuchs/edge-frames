@@ -74,7 +74,6 @@ case class GraphWCOJExec(outputVariables: Seq[Attribute],
         val csrBroadcast = graphChild.executeBroadcast[(TrieIterable, TrieIterable)]()
 
         val ret = partitionRDD.mapPartitionsWithIndex((partition, _) => {
-          scheduledTime.add(partition, System.currentTimeMillis())
           val tc = TaskContext.get()
 
           joinSpecification.partitioning match {
@@ -99,6 +98,7 @@ case class GraphWCOJExec(outputVariables: Seq[Attribute],
           val csr = csrBroadcast.value
           val join = joinSpecification.build(Seq(csr._1, csr._2), partition)
 
+          scheduledTime.add(partition, System.currentTimeMillis())
           val iter = new RowIterator {
             var row: Array[Long] = null
             val rowSize = joinSpecification.allVariables.size
