@@ -62,16 +62,18 @@ object Utils {
   def getDatasetPath(datasetName: String): String = {
     InetAddress.getLocalHost.getHostName match {
       case "bluefox" => "/home/per/workspace/master-thesis/datasets/" + datasetName
+      case "per" => "/home/per/workspace/master-thesis/datasets/" + datasetName
       case "bricks02.scilens.private" => "file:///scratch/per/datasets/" + datasetName
-      case s => throw new IllegalStateException("Unknown dataset path location for hostname: " + s)
+      case s => throw new IllegalStateException("Unknown dataset path location for hostname test: " + s)
     }
   }
 
   def getQueryCachePath: String = {
     InetAddress.getLocalHost.getHostName match {
       case "bluefox" => "./queryCache"
+      case "per" => "./queryCache"
       case "bricks02.scilens.private" => "file:///scratch/per/query-cache/"
-      case s => throw new IllegalStateException("Unknown dataset path location for hostname: " + s)
+      case s => throw new IllegalStateException("Unknown queryCache path location for hostname: " + s)
     }
   }
 
