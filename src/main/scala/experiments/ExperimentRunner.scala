@@ -308,6 +308,7 @@ object ExperimentRunner extends App {
   }
 
   private def loadDataset(): DataFrame = {
+    val before = System.currentTimeMillis()
     val dt = config.datasetType
 
     println(s"Loading ${dt} dataset from ${config.datasetFilePath}")
@@ -318,6 +319,7 @@ object ExperimentRunner extends App {
     d = d.cache()
 
     val count = d.count() // Trigger dataset caching
+    println(s"Loading and sorting dataset from csv costs: ${(System.currentTimeMillis() - before) / 1000} seconds.")
     println(s"Running on $count rows")
     d
   }
