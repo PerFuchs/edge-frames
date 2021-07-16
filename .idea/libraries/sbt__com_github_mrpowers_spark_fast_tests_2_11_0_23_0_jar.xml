@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="sbt: com.github.mrpowers:spark-fast-tests_2.11:0.23.0:jar">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.ivy2/cache/com.github.mrpowers/spark-fast-tests_2.11/jars/spark-fast-tests_2.11-0.23.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.ivy2/cache/com.github.mrpowers/spark-fast-tests_2.11/srcs/spark-fast-tests_2.11-0.23.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
